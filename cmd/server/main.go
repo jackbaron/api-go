@@ -5,18 +5,18 @@ import (
 	"net/http"
 
 	"github.com/nhatth/api-service/internal/app/database"
-	"github.com/nhatth/api-service/internal/app/router"
-	"github.com/nhatth/api-service/pkg/utils"
+	"github.com/nhatth/api-service/internal/app/helpers"
+	"github.com/nhatth/api-service/internal/app/routes"
 )
 
 func main() {
 
 	//? Load config file
-	config, err := utils.LoadConfig("./../")
+	config, err := helpers.LoadConfig("./../")
 
 	if err != nil {
 
-		log.Println("Cannot load config file")
+		log.Fatalln("Cannot load config file")
 
 		return
 	}
@@ -24,9 +24,7 @@ func main() {
 	//? Connection DB
 	db := database.ConnectDatabase(config)
 
-	r := router.SetUpRoutes(db)
-
-	log.Println(db)
+	r := routes.SetUpRoutes(db)
 
 	err = http.ListenAndServe(":8000", r)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nhatth/api-service/internal/app/services/auth/entity"
+	errorPkg "github.com/nhatth/api-service/pkg/errors"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -31,7 +32,7 @@ func (store *mysqlStore) GetUser(ctx context.Context, email string) (*entity.Aut
 
 	if err := store.db.Table(table).Where("email = ?", email).First(&data).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, gorm.ErrRecordNotFound
+			return nil, errorPkg.ErrRecordNotFound
 		}
 
 		return nil, errors.WithStack(err)

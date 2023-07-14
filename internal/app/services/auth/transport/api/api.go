@@ -21,5 +21,19 @@ func NewAuthAPI(bussines Bussines) *api {
 }
 
 func (api *api) RegisterHdl(w http.ResponseWriter, r *http.Request) {
-	helpers.SendMessageSuccessWithOutPayLoad(w, r, 200)
+	var data entity.AuthRegister
+
+	helpers.BindingDataBody(r, &data)
+
+	err := api.bussines.Register(r.Context(), &data)
+
+	if err != nil {
+
+		helpers.SendErrorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helpers.SendMessageSuccessWithOutPayLoad(w, r, http.StatusOK)
+
+	return
 }

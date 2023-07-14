@@ -1,8 +1,6 @@
-package utils
+package helpers
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
 )
 
@@ -15,7 +13,6 @@ type Config struct {
 }
 
 func LoadConfig(path string) (config Config, err error) {
-	log.Printf("Path config file %s", path)
 	viper.AddConfigPath(path)
 	viper.SetConfigFile(".env")
 	err = viper.ReadInConfig()

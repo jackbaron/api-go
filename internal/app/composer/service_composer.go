@@ -3,6 +3,7 @@ package composer
 import (
 	"net/http"
 
+	"github.com/nhatth/api-service/internal/app/helpers"
 	AuthBussines "github.com/nhatth/api-service/internal/app/services/auth/business"
 	authSQLStore "github.com/nhatth/api-service/internal/app/services/auth/storage/mysql"
 	authAPI "github.com/nhatth/api-service/internal/app/services/auth/transport/api"
@@ -17,7 +18,9 @@ func ComposeAuthAPIService(db *gorm.DB) AuthService {
 
 	authStore := authSQLStore.NewMySQLStore(db)
 
-	bus := AuthBussines.NewAuthBusiness(authStore)
+	hasher := new(helpers.Hasher)
+
+	bus := AuthBussines.NewAuthBusiness(authStore, hasher)
 
 	sericeAPI := authAPI.NewAuthAPI(bus)
 

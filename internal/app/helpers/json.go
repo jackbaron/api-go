@@ -17,10 +17,24 @@ type SuccessOnlyMessage struct {
 	Status  bool
 }
 
+type ErrorOnlyMessage struct {
+	Message string
+	Status  bool
+}
+
 func SendMessageSuccessWithOutPayLoad(w http.ResponseWriter, r *http.Request, code int) {
 	payload := SuccessOnlyMessage{
 		Message: "success",
 		Status:  true,
+	}
+
+	responseWithJson(w, code, payload)
+}
+
+func SendErrorResponse(w http.ResponseWriter, r *http.Request, code int, msg string) {
+	payload := ErrorOnlyMessage{
+		Message: msg,
+		Status:  false,
 	}
 
 	responseWithJson(w, code, payload)

@@ -12,6 +12,20 @@ type SuccessPayload struct {
 	Status  bool
 }
 
+type SuccessOnlyMessage struct {
+	Message string
+	Status  bool
+}
+
+func SendMessageSuccessWithOutPayLoad(w http.ResponseWriter, r *http.Request, code int) {
+	payload := SuccessOnlyMessage{
+		Message: "success",
+		Status:  true,
+	}
+
+	responseWithJson(w, code, payload)
+}
+
 func SendMessageSuccessFully(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
 
 	payload := SuccessPayload{
@@ -20,7 +34,7 @@ func SendMessageSuccessFully(w http.ResponseWriter, r *http.Request, code int, d
 		Data:    data,
 	}
 
-	responseWithJson(w, 200, payload)
+	responseWithJson(w, code, payload)
 }
 
 func responseWithJson(w http.ResponseWriter, code int, payload interface{}) {

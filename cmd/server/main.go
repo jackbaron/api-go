@@ -10,8 +10,6 @@ import (
 )
 
 func main() {
-	//? Init router
-	r := router.InitRouter()
 
 	//? Load config file
 	config, err := utils.LoadConfig("./../")
@@ -24,8 +22,9 @@ func main() {
 	}
 
 	//? Connection DB
-
 	db := database.ConnectDatabase(config)
+
+	r := router.SetUpRoutes(db)
 
 	log.Println(db)
 

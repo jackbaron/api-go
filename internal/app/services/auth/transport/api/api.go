@@ -9,7 +9,7 @@ import (
 )
 
 type Bussines interface {
-	Register(ctx context.Context, data *entity.AuthRegister) error
+	Register(ctx context.Context, data *entity.AuthRegister) (map[string]string, error)
 }
 
 type api struct {
@@ -25,15 +25,13 @@ func (api *api) RegisterHdl(w http.ResponseWriter, r *http.Request) {
 
 	helpers.BindingDataBody(r, &data)
 
-	err := api.bussines.Register(r.Context(), &data)
+	msgErros, err := api.bussines.Register(r.Context(), &data)
 
 	if err != nil {
 
-		helpers.SendErrorResponse(w, r, http.StatusBadRequest, err.Error())
+		helpers.SendErrorResponse(w, r, http.StatusBadRequest, "Failed to validation", msgErros)
 		return
 	}
 
 	helpers.SendMessageSuccessWithOutPayLoad(w, r, http.StatusOK)
-
-	return
 }

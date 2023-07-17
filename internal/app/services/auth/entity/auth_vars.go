@@ -1,6 +1,12 @@
 package entity
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/nhatth/api-service/internal/app/helpers"
+)
+
+const TYPE_TAG_JSON = "json"
 
 type AuthEmailPassword struct {
 	Email    string `json:"email" form:"email"`
@@ -14,44 +20,58 @@ type AuthRegister struct {
 	AuthEmailPassword
 }
 
-func (authen *AuthEmailPassword) Validate() error {
+func (authen *AuthEmailPassword) Validate() (map[string]string, bool) {
+
 	authen.Email = strings.TrimSpace(authen.Email)
+
+	var errors = make(map[string]string)
+
+	errorValidate := false
 
 	if !emailIsValid(authen.Email) {
 
-		return ErrEmailIsNotValid
+		errorValidate = true
+
+		jsonTag := helpers.FindStructFieldJSONName(authen, &authen.Email, TYPE_TAG_JSON)
+
+		errors[jsonTag] = ErrEmailIsNotValid.Error()
 	}
 
 	authen.Password = strings.TrimSpace(authen.Password)
 
 	if err := checkPassword(authen.Password); err != nil {
 
-		return err
+		errorValidate = true
+
+		jsonTag := helpers.FindStructFieldJSONName(authen, &authen.Password, TYPE_TAG_JSON)
+
+		errors[jsonTag] = err.Error()
 	}
 
-	return nil
+	return errors, errorValidate
 }
 
-func (authRegis *AuthRegister) Validate() error {
+func (authRegis *AuthRegister) Validate() (map[string]string, bool) {
 
-	if err := authRegis.AuthEmailPassword.Validate(); err != nil {
-
-		return err
-	}
+	errors, errorValidate := authRegis.AuthEmailPassword.Validate()
 
 	authRegis.FirstName = strings.TrimSpace(authRegis.FirstName)
 
 	if err := checkFirstName(authRegis.FirstName); err != nil {
 
-		return err
+		jsonTag := helpers.FindStructFieldJSONName(authRegis, &authRegis.FirstName, TYPE_TAG_JSON)
+
+		errors[jsonTag] = err.Error()
 	}
 
 	authRegis.LastName = strings.TrimSpace(authRegis.LastName)
 
 	if err := checkLastName(authRegis.LastName); err != nil {
 
-		return err
+		jsonTag := helpers.FindStructFieldJSONName(authRegis, &authRegis.LastName, TYPE_TAG_JSON)
+
+		errors[jsonTag] = err.Error()
 	}
 
-	return nil
+	return errors, errorValidate
 }

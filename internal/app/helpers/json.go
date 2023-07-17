@@ -17,9 +17,10 @@ type SuccessOnlyMessage struct {
 	Status  bool
 }
 
-type ErrorOnlyMessage struct {
-	Message string
+type ErrorRessponse struct {
+	Errors  map[string]string
 	Status  bool
+	Message string
 }
 
 func SendMessageSuccessWithOutPayLoad(w http.ResponseWriter, r *http.Request, code int) {
@@ -31,10 +32,11 @@ func SendMessageSuccessWithOutPayLoad(w http.ResponseWriter, r *http.Request, co
 	responseWithJson(w, code, payload)
 }
 
-func SendErrorResponse(w http.ResponseWriter, r *http.Request, code int, msg string) {
-	payload := ErrorOnlyMessage{
+func SendErrorResponse(w http.ResponseWriter, r *http.Request, code int, msg string, errors map[string]string) {
+	payload := ErrorRessponse{
 		Message: msg,
 		Status:  false,
+		Errors:  errors,
 	}
 
 	responseWithJson(w, code, payload)

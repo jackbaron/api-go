@@ -27,30 +27,33 @@ func NewAuthBusiness(repository AuthRepository, hasher Hashser) *business {
 	return &business{repository: repository, hasher: hasher}
 }
 
-func (bus *business) Register(ctx context.Context, data *entity.AuthRegister) error {
-	if err := data.Validate(); err != nil {
-		return err
+func (bus *business) Register(ctx context.Context, data *entity.AuthRegister) (map[string]string, error) {
+
+	errors, errorValidate := data.Validate()
+
+	if errorValidate {
+		return errors, errorPkg.ErrBadRequest.WithError(entity.ErrorValidateFailed.Error())
 	}
 
 	_, err := bus.repository.GetUser(ctx, data.Email)
 
 	if err == nil {
-		return errorPkg.ErrBadRequest.WithError(entity.ErrEmailHasExisted.Error())
+		return errors, errorPkg.ErrBadRequest.WithError(entity.ErrEmailHasExisted.Error())
 	} else if err != errorPkg.ErrRecordNotFound {
 
-		return errorPkg.ErrInternalServerError.WithError(entity.ErrCannotRegister.Error()).WithDebug(err.Error())
+		return errors, errorPkg.ErrInternalServerError.WithError(entity.ErrCannotRegister.Error()).WithDebug(err.Error())
 	}
 
 	salt, err := bus.hasher.RandomStr(16)
 
 	if err != nil {
-		return errorPkg.ErrInternalServerError.WithError(entity.ErrCannotRegister.Error()).WithDebug(err.Error())
+		return errors, errorPkg.ErrInternalServerError.WithError(entity.ErrCannotRegister.Error()).WithDebug(err.Error())
 	}
 
 	passwordHashed, err := bus.hasher.HashPassword(salt, data.Password)
 
 	if err != nil {
-		return errorPkg.ErrInternalServerError.WithError(entity.ErrCannotRegister.Error()).WithDebug(err.Error())
+		return errors, errorPkg.ErrInternalServerError.WithError(entity.ErrCannotRegister.Error()).WithDebug(err.Error())
 	}
 
 	data.Password = passwordHashed
@@ -58,8 +61,8 @@ func (bus *business) Register(ctx context.Context, data *entity.AuthRegister) er
 	data.Salt = salt
 
 	if err := bus.repository.AddNewUser(ctx, data); err != nil {
-		return errorPkg.ErrInternalServerError.WithError(entity.ErrCannotRegister.Error()).WithDebug(err.Error())
+		return errors, errorPkg.ErrInternalServerError.WithError(entity.ErrCannotRegister.Error()).WithDebug(err.Error())
 	}
 
-	return nil
+	return errors, nil
 }

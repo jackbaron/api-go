@@ -10,7 +10,7 @@ import (
 func authRouter(authService composer.AuthService) http.Handler {
 	r := chi.NewRouter()
 
-	// r.Post("/login", authService.RegisterHdl())
+	r.Post("/login", authService.LoginHdl)
 
 	r.Post("/regitser", authService.RegisterHdl)
 

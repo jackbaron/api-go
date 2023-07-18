@@ -38,5 +38,5 @@ func (r *Hasher) HashPassword(salt, password string) (string, error) {
 func (r *Hasher) CompareHashPassword(hassedPasssword, salt, passsword string) bool {
 	spStr := fmt.Sprintf("%s.%s", salt, passsword)
 
-	return bcrypt.CompareHashAndPassword([]byte(hassedPasssword), []byte(spStr)) != nil
+	return bcrypt.CompareHashAndPassword([]byte(hassedPasssword), []byte(spStr)) == nil
 }

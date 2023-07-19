@@ -7,7 +7,7 @@ import (
 	"github.com/nhatth/api-service/internal/app/composer"
 )
 
-func authRouter(authService composer.AuthService) http.Handler {
+func AuthRouter(authService composer.AuthService) http.Handler {
 	r := chi.NewRouter()
 
 	r.Post("/login", authService.LoginHdl)

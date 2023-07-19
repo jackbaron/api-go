@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nhatth/api-service/internal/app/helpers"
+	authEntity "github.com/nhatth/api-service/internal/app/services/auth/entity"
 	userEntity "github.com/nhatth/api-service/internal/app/services/user/entity"
 
 	"gorm.io/driver/mysql"
@@ -28,7 +29,7 @@ func ConnectDatabase(cfg helpers.Config) *gorm.DB {
 	}
 
 	//? Migrate
-	db.AutoMigrate(&userEntity.User{})
+	db.AutoMigrate(&userEntity.User{}, &authEntity.OauthAccessToken{}, &authEntity.OauthRefreshToken{})
 
 	return db
 }

@@ -2,6 +2,7 @@ package entity
 
 import (
 	"strings"
+	"time"
 
 	"github.com/nhatth/api-service/internal/app/helpers"
 )
@@ -13,11 +14,30 @@ type AuthEmailPassword struct {
 	Password string `json:"password" form:"password"`
 }
 
+type Token struct {
+	Token string `json:"token"`
+	// ExpiredIn in seconds
+	ExpiredIn *time.Time `json:"expireIn"`
+}
+
+type TokenResponse struct {
+	AccessToken  Token  `json:"accessToken"`
+	RefreshToken Token  `jsson:"refreshToken"`
+	TokenType    string `json:"tokenType"`
+}
+
 type AuthRegister struct {
 	FirstName string `json:"firstName" form:"firstName"`
 	LastName  string `json:"lastName" form:"lastName"`
 	Salt      string
+	CreatedAt time.Time
 	AuthEmailPassword
+}
+
+type AccessTokenData struct {
+	Sub       string
+	Tid       string
+	ExpiredAt time.Time
 }
 
 func (authen *AuthEmailPassword) Validate() (map[string]string, bool) {

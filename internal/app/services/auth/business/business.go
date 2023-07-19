@@ -2,7 +2,6 @@ package bussines
 
 import (
 	"context"
-	"log"
 
 	"github.com/google/uuid"
 
@@ -10,11 +9,13 @@ import (
 	"github.com/nhatth/api-service/internal/app/services/auth/entity"
 	"github.com/nhatth/api-service/internal/common"
 	errorPkg "github.com/nhatth/api-service/pkg/errors"
+	"github.com/nhatth/api-service/pkg/jwt"
 )
 
 type AuthRepository interface {
 	AddNewUser(ctx context.Context, data *entity.AuthRegister) error
 	GetUser(ctx context.Context, email string) (*entity.AuthUser, error)
+	StoreAccessToken(ctx context.Context, data *jwt.TokenDetails, tid, sub string) (*entity.OauthAccessToken, error)
 }
 
 type Hashser interface {
@@ -73,33 +74,54 @@ func (bus *business) Register(ctx context.Context, data *entity.AuthRegister) (m
 	return errors, nil
 }
 
-func (bus *business) Login(ctx context.Context, data *entity.AuthEmailPassword) (map[string]string, error) {
+func (bus *business) Login(ctx context.Context, data *entity.AuthEmailPassword) (*entity.TokenResponse, map[string]string, error) {
 
 	errors, errorValidate := data.Validate()
 
 	if errorValidate {
-		return errors, errorPkg.ErrBadRequest.WithError(entity.ErrorValidateFailed.Error())
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrorValidateFailed.Error())
 	}
 
 	authData, err := bus.repository.GetUser(ctx, data.Email)
 
 	if err != nil {
-		return errors, errorPkg.ErrBadRequest.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
 	}
 
 	if !bus.hasher.CompareHashPassword(authData.Password, authData.Salt, data.Password) {
 
-		return errors, errorPkg.ErrBadRequest.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrLoginFailed.Error())
 	}
 
 	uid := uid.NewUID(uint32(authData.Id), 1, 1)
 
 	sub := uid.String()
 
-	tid := uuid.New()
+	tid := uuid.New().String()
 
-	log.Println(sub, tid)
+	token, err := bus.jwt.IssueToken(ctx, tid, sub)
 
-	return errors, nil
+	if err != nil {
+
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
+	}
+
+	_, err = bus.repository.StoreAccessToken(ctx, token, tid, sub)
+
+	if err != nil {
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
+	}
+
+	return &entity.TokenResponse{
+		TokenType: "Bearer",
+		AccessToken: entity.Token{
+			Token:     token.AccessToken,
+			ExpiredIn: token.AccessTokenExpired,
+		},
+		RefreshToken: entity.Token{
+			Token:     token.RefreshToken,
+			ExpiredIn: token.RefreshTokenExpired,
+		},
+	}, errors, nil
 
 }

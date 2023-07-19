@@ -10,7 +10,7 @@ import (
 
 type Bussines interface {
 	Register(ctx context.Context, data *entity.AuthRegister) (map[string]string, error)
-	Login(ctx context.Context, data *entity.AuthEmailPassword) (map[string]string, error)
+	Login(ctx context.Context, data *entity.AuthEmailPassword) (*entity.TokenResponse, map[string]string, error)
 }
 
 type api struct {
@@ -42,14 +42,14 @@ func (api *api) LoginHdl(w http.ResponseWriter, r *http.Request) {
 
 	helpers.BindingDataBody(r, &data)
 
-	msgErros, err := api.bussines.Login(r.Context(), &data)
+	token, msgErros, err := api.bussines.Login(r.Context(), &data)
 
 	if err != nil {
 
-		helpers.SendErrorResponse(w, r, http.StatusBadRequest, "Failed to validation", msgErros)
+		helpers.SendErrorResponse(w, r, http.StatusBadRequest, err.Error(), msgErros)
 
 		return
 	}
 
-	helpers.SendMessageSuccessWithOutPayLoad(w, r, http.StatusOK)
+	helpers.SendMessageSuccessFully(w, r, http.StatusOK, token)
 }

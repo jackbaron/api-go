@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 	"flag"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -102,4 +103,22 @@ func (j *jwtx) IssueToken(ctx context.Context, id, sub string) (*TokenDetails, e
 	tokenDetail.RefreshTokenExpired = &refrehTokenExpired.Time
 
 	return tokenDetail, nil
+}
+
+func (j *jwtx) ParseToken(ctx context.Context, tokenStr string) (claims *jwt.RegisteredClaims, err error) {
+	var rc jwt.RegisteredClaims
+
+	token, err := jwt.ParseWithClaims(tokenStr, &rc, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(j.secret), nil
+	})
+
+	if !token.Valid {
+		return nil, errors.WithStack(err)
+	}
+
+	return &rc, nil
 }

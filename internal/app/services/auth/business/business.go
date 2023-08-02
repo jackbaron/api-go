@@ -138,25 +138,25 @@ func (bus *business) RefreshToken(ctx context.Context, data *entity.AuthRefreshT
 	}
 
 	//?Parse token
-	refreshTokenParse, err := bus.jwt.ParseToken(ctx, data.RefreshToken)
+	refreshTokenParse, err := bus.jwt.ParseRefreshToken(ctx, data.RefreshToken)
 
 	if err != nil {
-		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrorRefreshTokenFailed.Error()).WithDebug("parse token error" + err.Error())
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrorRefreshTokenFailed.Error()).WithDebug(err.Error())
 	}
 
 	accessToken, err := bus.repository.GetOauthAccesssToken(ctx, refreshTokenParse.ID, refreshTokenParse.Subject)
 
 	if err != nil {
 
-		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrorRefreshTokenFailed.Error()).WithDebug("Cannot get access token in DB " + err.Error())
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrorRefreshTokenInvalid.Error()).WithDebug(err.Error())
 	}
 
 	//? Check refresh token has expired
 	timeNow := time.Now().UTC()
 
-	if accessToken.OauthRefreshToken.ExpiredAt.Before(timeNow) {
+	if timeNow.After(*accessToken.OauthRefreshToken.ExpiredAt) {
 
-		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrorRefreshTokenExpired.Error()).WithDebug("Refresh token was expired")
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrorRefreshTokenExpired.Error()).WithDebug(err.Error())
 	}
 
 	//? Renew accesss token and refresh token
@@ -166,13 +166,13 @@ func (bus *business) RefreshToken(ctx context.Context, data *entity.AuthRefreshT
 
 	if err != nil {
 
-		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
 	}
 
 	_, err = bus.repository.ReNewAccessToken(ctx, token, accessToken, tid, accessToken.Sub)
 
 	if err != nil {
-		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
 	}
 
 	return &entity.TokenResponse{

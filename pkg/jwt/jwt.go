@@ -90,9 +90,9 @@ func (j *jwtx) IssueToken(ctx context.Context, id, sub string) (*TokenDetails, e
 		ID:        id,
 	}
 
-	t = jwt.NewWithClaims(jwt.SigningMethodHS256, claimsRefresh)
+	trf := jwt.NewWithClaims(jwt.SigningMethodHS256, claimsRefresh)
 
-	refreshTokenSigned, err := t.SignedString([]byte(j.refreshSecret))
+	refreshTokenSigned, err := trf.SignedString([]byte(j.refreshSecret))
 
 	if err != nil {
 
@@ -106,6 +106,12 @@ func (j *jwtx) IssueToken(ctx context.Context, id, sub string) (*TokenDetails, e
 }
 
 func (j *jwtx) ParseToken(ctx context.Context, tokenStr string) (claims *jwt.RegisteredClaims, err error) {
+	rc, err := j.commonParseToken(ctx, tokenStr, j.secret)
+
+	return rc, err
+}
+
+func (j *jwtx) commonParseToken(ctx context.Context, tokenStr, secrect string) (claims *jwt.RegisteredClaims, err error) {
 	var rc jwt.RegisteredClaims
 
 	token, err := jwt.ParseWithClaims(tokenStr, &rc, func(token *jwt.Token) (interface{}, error) {
@@ -113,7 +119,7 @@ func (j *jwtx) ParseToken(ctx context.Context, tokenStr string) (claims *jwt.Reg
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(j.secret), nil
+		return []byte(secrect), nil
 	})
 
 	if !token.Valid {
@@ -121,4 +127,11 @@ func (j *jwtx) ParseToken(ctx context.Context, tokenStr string) (claims *jwt.Reg
 	}
 
 	return &rc, nil
+}
+
+func (j *jwtx) ParseRefreshToken(ctx context.Context, tokenStr string) (claims *jwt.RegisteredClaims, err error) {
+
+	rc, err := j.commonParseToken(ctx, tokenStr, j.refreshSecret)
+
+	return rc, err
 }

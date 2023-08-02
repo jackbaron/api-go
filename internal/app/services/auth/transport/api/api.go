@@ -6,6 +6,7 @@ import (
 
 	"github.com/nhatth/api-service/internal/app/helpers"
 	"github.com/nhatth/api-service/internal/app/services/auth/entity"
+	"github.com/sirupsen/logrus"
 )
 
 type Bussines interface {
@@ -65,6 +66,7 @@ func (api *api) RefreshTokenHl(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 
+		logrus.Debug(err)
 		helpers.SendErrorResponse(w, r, http.StatusBadRequest, err.Error(), msgErros)
 
 		return

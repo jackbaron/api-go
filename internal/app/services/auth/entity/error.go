@@ -16,5 +16,6 @@ var (
 	ErrCannotRegister        = errors.New("cannot register")
 	ErrorValidateFailed      = errors.New("validation failed")
 	ErrorRefreshTokenFailed  = errors.New("refresh token failed")
+	ErrorRefreshTokenInvalid = errors.New("refresh token invalid")
 	ErrorRefreshTokenExpired = errors.New("refresh token was expired")
 )

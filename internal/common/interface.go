@@ -10,4 +10,5 @@ import (
 type JWTProvider interface {
 	IssueToken(ctx context.Context, id, sub string) (*jwt.TokenDetails, error)
 	ParseToken(ctx context.Context, tokenStr string) (*jwtGolang.RegisteredClaims, error)
+	ParseRefreshToken(ctx context.Context, tokenStr string) (*jwtGolang.RegisteredClaims, error)
 }

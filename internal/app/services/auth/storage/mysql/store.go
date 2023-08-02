@@ -67,7 +67,7 @@ func (store *mysqlStore) GetOauthAccesssToken(ctx context.Context, tid, sub stri
 
 	var accessToken entity.OauthAccessToken
 
-	if err := store.db.Where("sub = ?", sub).Where("tid = ?", tid).First(&accessToken).Error; err != nil {
+	if err := store.db.Preload("OauthRefreshToken").Where("sub = ?", sub).Where("tid = ?", tid).First(&accessToken).Error; err != nil {
 
 		if err == gorm.ErrRecordNotFound {
 			return nil, errorPkg.ErrRecordNotFound
@@ -82,7 +82,13 @@ func (store *mysqlStore) GetOauthAccesssToken(ctx context.Context, tid, sub stri
 func (store *mysqlStore) ReNewAccessToken(ctx context.Context, data *jwt.TokenDetails, access *entity.OauthAccessToken, tid, sub string) (*entity.OauthAccessToken, error) {
 
 	if err := store.db.Model(access).Updates(entity.OauthAccessToken{
-		Revoked: true, OauthRefreshToken: entity.OauthRefreshToken{Revoked: true}}).Error; err != nil {
+		Revoked: true}).Error; err != nil {
+
+		return nil, errors.WithStack(err)
+	}
+
+	if err := store.db.Model(access.OauthRefreshToken).Updates(entity.OauthAccessToken{
+		Revoked: true}).Error; err != nil {
 
 		return nil, errors.WithStack(err)
 	}

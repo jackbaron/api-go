@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -10,17 +10,25 @@ import (
 	"github.com/nhatth/api-service/internal/app/database"
 	"github.com/nhatth/api-service/internal/app/helpers"
 	authRoutes "github.com/nhatth/api-service/internal/app/services/auth/routes"
+	"github.com/nhatth/api-service/pkg/logger"
 	"gorm.io/gorm"
 )
 
 func main() {
 
 	//? Load config file
-	config, err := helpers.LoadConfig("./../")
+	absPath, err := filepath.Abs("./../")
+	if err != nil {
+		panic(err)
+	}
+
+	config, err := helpers.LoadConfig(absPath)
+
+	logger := logger.GlobalLogger().GetLogger("service")
 
 	if err != nil {
 
-		log.Fatalln("Cannot load config file")
+		logger.Fatalf("Cannot load config file %s", err.Error())
 
 		return
 	}
@@ -33,10 +41,10 @@ func main() {
 	err = http.ListenAndServe(":8000", r)
 
 	if err != nil {
-		log.Println("Running server faild")
+		logger.Fatal(err)
 	}
 
-	log.Println("Running server port 8000")
+	logger.Debug("Running server port 8000")
 }
 
 func setUpRoutes(db *gorm.DB) *chi.Mux {

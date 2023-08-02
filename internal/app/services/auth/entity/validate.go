@@ -5,6 +5,14 @@ import (
 	"unicode"
 )
 
+func checkRefreshToken(s string) error {
+	if s == "" {
+		return ErrRefreshTokenIsEmpty
+	}
+
+	return nil
+}
+
 func emailIsValid(s string) bool {
 	_, err := mail.ParseAddress(s)
 

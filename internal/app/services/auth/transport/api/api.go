@@ -11,6 +11,7 @@ import (
 type Bussines interface {
 	Register(ctx context.Context, data *entity.AuthRegister) (map[string]string, error)
 	Login(ctx context.Context, data *entity.AuthEmailPassword) (*entity.TokenResponse, map[string]string, error)
+	RefreshToken(ctx context.Context, data *entity.AuthRefreshToken) (*entity.TokenResponse, map[string]string, error)
 }
 
 type api struct {
@@ -52,4 +53,23 @@ func (api *api) LoginHdl(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helpers.SendMessageSuccessFully(w, r, http.StatusOK, token)
+}
+
+func (api *api) RefreshTokenHl(w http.ResponseWriter, r *http.Request) {
+
+	var data entity.AuthRefreshToken
+
+	helpers.BindingDataBody(r, &data)
+
+	token, msgErros, err := api.bussines.RefreshToken(r.Context(), &data)
+
+	if err != nil {
+
+		helpers.SendErrorResponse(w, r, http.StatusBadRequest, err.Error(), msgErros)
+
+		return
+	}
+
+	helpers.SendMessageSuccessFully(w, r, http.StatusOK, token)
+
 }

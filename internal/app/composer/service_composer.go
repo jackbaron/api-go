@@ -15,6 +15,7 @@ import (
 type AuthService interface {
 	RegisterHdl(w http.ResponseWriter, r *http.Request)
 	LoginHdl(w http.ResponseWriter, r *http.Request)
+	RefreshTokenHl(w http.ResponseWriter, r *http.Request)
 }
 
 func ComposeAuthAPIService(db *gorm.DB) AuthService {

@@ -17,15 +17,16 @@ type AuthUser struct {
 
 type OauthAccessToken struct {
 	gorm.Model
+	Revoked           bool
 	Sub               string            `gorm:"size:255; not null"`
 	Tid               string            `gorm:"size:255; not null"`
 	OauthRefreshToken OauthRefreshToken `gorm:"foreignKey:AccessTokenID; contraint:OnDelete:CASCADE"`
-	ExpiredAt         time.Time         `gorm:"datetime; not null"`
+	ExpiredAt         *time.Time        `gorm:"datetime; not null"`
 }
 
 type OauthRefreshToken struct {
 	gorm.Model
 	AccessTokenID uint
 	Revoked       bool
-	ExpiredAt     time.Time `gorm:"datetime; not null"`
+	ExpiredAt     *time.Time `gorm:"datetime; not null"`
 }

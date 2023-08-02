@@ -34,10 +34,34 @@ type AuthRegister struct {
 	AuthEmailPassword
 }
 
+type AuthRefreshToken struct {
+	RefreshToken string `json:"refreshToken" form:"refreshToken"`
+}
+
 type AccessTokenData struct {
 	Sub       string
 	Tid       string
 	ExpiredAt time.Time
+}
+
+func (authRefreshToken *AuthRefreshToken) Validate() (map[string]string, bool) {
+
+	authRefreshToken.RefreshToken = strings.TrimSpace(authRefreshToken.RefreshToken)
+
+	errors := make(map[string]string)
+
+	errorValidate := false
+
+	if err := checkRefreshToken(authRefreshToken.RefreshToken); err != nil {
+
+		errorValidate = true
+
+		jsonTag := helpers.FindStructFieldJSONName(authRefreshToken, &authRefreshToken.RefreshToken, TYPE_TAG_JSON)
+
+		errors[jsonTag] = err.Error()
+	}
+
+	return errors, errorValidate
 }
 
 func (authen *AuthEmailPassword) Validate() (map[string]string, bool) {

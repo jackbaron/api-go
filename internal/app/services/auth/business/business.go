@@ -2,6 +2,7 @@ package bussines
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -16,6 +17,8 @@ type AuthRepository interface {
 	AddNewUser(ctx context.Context, data *entity.AuthRegister) error
 	GetUser(ctx context.Context, email string) (*entity.AuthUser, error)
 	StoreAccessToken(ctx context.Context, data *jwt.TokenDetails, tid, sub string) (*entity.OauthAccessToken, error)
+	GetOauthAccesssToken(ctx context.Context, tid, sub string) (*entity.OauthAccessToken, error)
+	ReNewAccessToken(ctx context.Context, data *jwt.TokenDetails, access *entity.OauthAccessToken, tid, sub string) (*entity.OauthAccessToken, error)
 }
 
 type Hashser interface {
@@ -124,4 +127,63 @@ func (bus *business) Login(ctx context.Context, data *entity.AuthEmailPassword) 
 		},
 	}, errors, nil
 
+}
+
+func (bus *business) RefreshToken(ctx context.Context, data *entity.AuthRefreshToken) (*entity.TokenResponse, map[string]string, error) {
+
+	errors, errorValidate := data.Validate()
+
+	if errorValidate {
+		return nil, errors, errorPkg.ErrBadRequest.WithError(entity.ErrorValidateFailed.Error())
+	}
+
+	//?Parse token
+	refreshTokenParse, err := bus.jwt.ParseToken(ctx, data.RefreshToken)
+
+	if err != nil {
+		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrorRefreshTokenFailed.Error()).WithDebug("parse token error" + err.Error())
+	}
+
+	accessToken, err := bus.repository.GetOauthAccesssToken(ctx, refreshTokenParse.ID, refreshTokenParse.Subject)
+
+	if err != nil {
+
+		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrorRefreshTokenFailed.Error()).WithDebug("Cannot get access token in DB " + err.Error())
+	}
+
+	//? Check refresh token has expired
+	timeNow := time.Now().UTC()
+
+	if accessToken.OauthRefreshToken.ExpiredAt.Before(timeNow) {
+
+		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrorRefreshTokenExpired.Error()).WithDebug("Refresh token was expired")
+	}
+
+	//? Renew accesss token and refresh token
+	tid := uuid.New().String()
+
+	token, err := bus.jwt.IssueToken(ctx, tid, accessToken.Sub)
+
+	if err != nil {
+
+		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
+	}
+
+	_, err = bus.repository.ReNewAccessToken(ctx, token, accessToken, tid, accessToken.Sub)
+
+	if err != nil {
+		return nil, errors, errorPkg.ErrInternalServerError.WithError(entity.ErrLoginFailed.Error()).WithDebug(err.Error())
+	}
+
+	return &entity.TokenResponse{
+		TokenType: "Bearer",
+		AccessToken: entity.Token{
+			Token:     token.AccessToken,
+			ExpiredIn: token.AccessTokenExpired,
+		},
+		RefreshToken: entity.Token{
+			Token:     token.RefreshToken,
+			ExpiredIn: token.RefreshTokenExpired,
+		},
+	}, errors, nil
 }

@@ -49,9 +49,50 @@ func (store *mysqlStore) StoreAccessToken(ctx context.Context, data *jwt.TokenDe
 	accessToken := entity.OauthAccessToken{
 		Sub:       sub,
 		Tid:       tid,
-		ExpiredAt: *data.AccessTokenExpired,
+		ExpiredAt: data.AccessTokenExpired,
 		OauthRefreshToken: entity.OauthRefreshToken{
-			ExpiredAt: *data.RefreshTokenExpired,
+			ExpiredAt: data.RefreshTokenExpired,
+		},
+	}
+
+	if err := store.db.Create(&accessToken).Error; err != nil {
+
+		return nil, errors.WithStack(err)
+	}
+
+	return &accessToken, nil
+}
+
+func (store *mysqlStore) GetOauthAccesssToken(ctx context.Context, tid, sub string) (*entity.OauthAccessToken, error) {
+
+	var accessToken entity.OauthAccessToken
+
+	if err := store.db.Where("sub = ?", sub).Where("tid = ?", tid).First(&accessToken).Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return nil, errorPkg.ErrRecordNotFound
+		}
+
+		return nil, errors.WithStack(err)
+	}
+
+	return &accessToken, nil
+}
+
+func (store *mysqlStore) ReNewAccessToken(ctx context.Context, data *jwt.TokenDetails, access *entity.OauthAccessToken, tid, sub string) (*entity.OauthAccessToken, error) {
+
+	if err := store.db.Model(access).Updates(entity.OauthAccessToken{
+		Revoked: true, OauthRefreshToken: entity.OauthRefreshToken{Revoked: true}}).Error; err != nil {
+
+		return nil, errors.WithStack(err)
+	}
+
+	accessToken := entity.OauthAccessToken{
+		Sub:       sub,
+		Tid:       tid,
+		ExpiredAt: data.AccessTokenExpired,
+		OauthRefreshToken: entity.OauthRefreshToken{
+			ExpiredAt: data.RefreshTokenExpired,
 		},
 	}
 

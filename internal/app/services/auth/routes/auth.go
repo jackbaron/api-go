@@ -14,5 +14,7 @@ func AuthRouter(authService composer.AuthService) http.Handler {
 
 	r.Post("/regitser", authService.RegisterHdl)
 
+	r.Post("/token/refresh", authService.RefreshTokenHl)
+
 	return r
 }
